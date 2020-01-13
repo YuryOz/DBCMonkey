@@ -14,8 +14,8 @@
 #include <cstring>
 #include <regex>
 
-typedef std::unordered_map<uint32_t, std::string> StrMap;
-
+typedef std::unordered_map<uint32_t, std::string> IntStrMap;
+typedef std::unordered_map<std::string, uint32_t> StrIntMap;
 
 
 typedef struct {
@@ -35,7 +35,7 @@ typedef struct {
 	bool isSigned;
 	int32_t MPvalue;
 	std::string MPSigName;
-	StrMap EnumValues;
+	IntStrMap EnumValues;
 } DBCSignal;
 
 typedef std::unordered_map<std::string, DBCSignal> SignalMap;  // signal name : DBCSignal
@@ -52,21 +52,29 @@ typedef std::unordered_map<uint32_t, DBCMessage> MessageMap; // msg ID : DBCMess
 
 typedef std::unordered_map<uint32_t, MessageMap> ChannelMap;
 
-
+typedef std::unordered_map<uint32_t, StrIntMap> MessageNameMap;
 
 
 class DBCParser {
 	ChannelMap mData;
-
+	MessageNameMap mNamesData;
 
 public:
 	DBCParser();
 	virtual ~DBCParser();
-	bool ReadDBC(const char *filename, uint32_t channel = 0);
+	bool ReadDBC(const std::string &filename, uint32_t channel = 0);
 	void Print();
 
-	std::string &getMessageName(uint32_t message_id, uint32_t channel = 0);
-	uint32_t getMessageId(const char* message_name, uint32_t channel = 0);
+	std::string &getMessageName(const uint32_t message_id, const uint32_t channel = 0);
+	uint32_t getMessageId(const std::string &message_name, const uint32_t channel = 0);
+
+	std::vector<uint32_t> getChannels();
+	std::vector<uint32_t> getMessages(const uint32_t channel = 0);
+	std::vector<std::string> getSignals(const uint32_t message_id, const uint32_t channel = 0);
+	std::vector<std::string> getSignals(const std::string & message_name, const uint32_t channel = 0);
+
+	DBCSignal &getSignal(const std::string &signal_name, const uint32_t message_id, const uint32_t channel = 0);
+	DBCSignal &getSignal(const std::string &signal_name, const std::string &message_name, const uint32_t channel = 0);
 
 };
 

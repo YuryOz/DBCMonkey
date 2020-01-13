@@ -39,7 +39,7 @@ DBCParser::~DBCParser() {
 	// TODO Auto-generated destructor stub
 }
 
-bool DBCParser::ReadDBC(const char *filename, uint32_t channel) {
+bool DBCParser::ReadDBC(const std::string &filename, const uint32_t channel) {
 
 	std::cout << "reading file: " << filename << " channel: " << channel << std::endl;
 	std::ifstream dbcfile(filename);
@@ -69,6 +69,7 @@ bool DBCParser::ReadDBC(const char *filename, uint32_t channel) {
 				curMsgID = msg.ID;
 
 				mData[channel][msg.ID] = msg;
+				mNamesData[channel][msg.Name] = msg.ID;
 
 //				for (auto x : m) {
 //					std::cout << n++ << " MESSAGE [" << x << "] " << std::endl;
@@ -129,38 +130,76 @@ bool DBCParser::ReadDBC(const char *filename, uint32_t channel) {
 	return true;
 }
 
+DBCSignal &DBCParser::getSignal(const std::string &signal_name, const std::string &message_name, const uint32_t channel){
+	return getSignal(signal_name, getMessageId(message_name, channel), channel);
+}
 
-std::string &DBCParser::getMessageName(uint32_t message_id, uint32_t channel){
-
+std::string &DBCParser::getMessageName(const uint32_t message_id, const uint32_t channel){
 	return mData[channel][message_id].Name;
 }
 
-uint32_t DBCParser::getMessageId(const char* message_name, uint32_t channel){
-
- return 0;
+uint32_t DBCParser::getMessageId(const std::string &message_name, const uint32_t channel){
+	return mNamesData[channel][message_name];
 }
 
+std::vector<std::string> DBCParser::getSignals(const uint32_t message_id, const uint32_t channel){
+	std::vector<std::string> signals;
+	signals.reserve(mData[channel][message_id].Signals.size());
+
+	for (auto& sig_it: mData[channel][message_id].Signals) {
+		signals.push_back(sig_it.first);
+	}
+
+	return signals;
+}
+
+std::vector<std::string> DBCParser::getSignals(const std::string &message_name, const uint32_t channel){
+	return getSignals(getMessageId(message_name, channel), channel);
+}
+
+std::vector<uint32_t> DBCParser::getChannels() {
+	std::vector<uint32_t> channels;
+	channels.reserve(mData.size());
+	for (auto &ch_it : mData) {
+		channels.push_back(ch_it.first);
+	}
+	return channels;
+}
+
+std::vector<uint32_t> DBCParser::getMessages(const uint32_t channel){
+	std::vector<uint32_t> messages;
+	messages.reserve(mData[channel].size());
+	for (auto &msg_it : mData[channel]) {
+		messages.push_back(msg_it.first);
+	}
+	return messages;
+}
+
+DBCSignal &DBCParser::getSignal(const std::string &signal_name, const uint32_t message_id, const uint32_t channel) {
+	return mData[channel][message_id].Signals[signal_name];
+}
 
 void DBCParser::Print() {
 
-	for (auto& chan_it: mData) {
-	    std::cout <<  "Channel " << chan_it.first  << " Msgs: " << chan_it.second.size() << std::endl;
+	std::vector<uint32_t> channels = getChannels();
 
-	    for(auto & msg_it: chan_it.second) {
-	    	std::cout <<  " + Message " << msg_it.first  << " " << msg_it.second.Name.c_str() << std::endl;
-
-	    	for(auto & sig_it: msg_it.second.Signals) {
-	    		std::cout <<  "     Signal " << sig_it.first.c_str() << " " << sig_it.second.msgID << std::endl;
-	    		std::cout <<  "       bit pos " << sig_it.second.BitPos << " size " << sig_it.second.BitSize << std::endl;
-	    		std::cout <<  "           min " << sig_it.second.Min << " max " << sig_it.second.Max << " scale " << sig_it.second.Scale << " off " << sig_it.second.Offset << std::endl;
-	    		std::cout <<  "        signed " << sig_it.second.isSigned << " units " << sig_it.second.Units << std::endl;
-	    		std::cout <<  "            LE " << sig_it.second.isLE << " mplex " << sig_it.second.isMP << " sig "  << sig_it.second.MPSigName << " val " << sig_it.second.MPvalue  << std::endl;
-
-	    		for(auto & enval: sig_it.second.EnumValues) {
-	    			std::cout <<  "             VAL: " << enval.first << " " << enval.second.c_str() << std::endl;
-	    		}
-	    	}
-	    }
+	std::cout <<  "Channels #" << channels.size() << std::endl;
+	for(auto channel : channels) {
+		std::cout <<  "Channel " << channel << std::endl;
+		std::vector<uint32_t> messages = getMessages(channel);
+		std::cout <<  "   Messages #" << messages.size() << std::endl;
+		for(auto message:  messages) {
+			std::cout <<  "   Message " << message << std::endl;
+			std::vector<std::string> signals = getSignals(message, channel);
+			std::cout <<  "      Signals# " << signals.size() << std::endl;
+			for(auto sig: signals) {
+				std::cout <<  "      Signal# " << sig << std::endl;
+				DBCSignal &signal = getSignal(sig, message, channel);
+				std::cout <<  "       Signal " << signal.Name << " " << signal.msgID << std::endl;
+				std::cout <<  "       bits: " << signal.BitPos << " " <<  signal.BitSize << std::endl;
+				std::cout <<  "       min: " << signal.Min << " max:" <<  signal.Max << std::endl;
+			}
+		}
 	}
 }
 
