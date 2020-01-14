@@ -24,10 +24,10 @@ typedef struct {
 	std::string Name;
 	uint32_t BitPos;
 	uint32_t BitSize;
-	float Scale;
-	float Offset;
-	float Min;
-	float Max;
+	double Scale;
+	double Offset;
+	double Min;
+	double Max;
 	std::string Units;
 	std::string Receivers;
 	bool isLE; // little endian
@@ -75,6 +75,9 @@ public:
 
 	DBCSignal &getSignal(const std::string &signal_name, const uint32_t message_id, const uint32_t channel = 0);
 	DBCSignal &getSignal(const std::string &signal_name, const std::string &message_name, const uint32_t channel = 0);
+
+	double getDoubleValue(const std::string &signal_name, const uint32_t message_id, const uint32_t channel, unsigned const char* data, uint32_t size);
+
 
 };
 
